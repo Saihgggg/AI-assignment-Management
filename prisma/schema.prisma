@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      String   // "student" | "instructor"
+  createdAt DateTime @default(now())
+  submissions Submission[]
+  assignments Assignment[] @relation("InstructorAssignments")
+}
+
+model Assignment {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  maxScore    Int      @default(100)
+  dueDate     DateTime?
+  instructorId String
+  instructor   User     @relation("InstructorAssignments", fields: [instructorId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+  createdAt   DateTime @default(now())
+}
+
+model Submission {
+  id            String   @id @default(cuid())
+  assignmentId  String
+  assignment    Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  content       String   // text content (from paste or extracted from PDF)
+  fileName      String?  // original file name if uploaded
+  status        String   @default("pending") // pending | evaluated
+  score         Int?     // 0-100
+  plagiarismRisk String? // e.g. "22%"
+  feedbackSummary String?
+  feedbackDetail  String?
+  evaluatedAt   DateTime?
+  createdAt     DateTime @default(now())
+}
